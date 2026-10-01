@@ -28,12 +28,12 @@ function App() {
   const handleSignup = async () => {
     const {error} = await supabase.auth.signUp({email, password})
     if(error) alert(error.message)
-    else alert("ID बन गई! अब Login करो")
+    else alert("ID बन गई!")
   }
 
   const handleLogin = async () => {
     const {data, error} = await supabase.auth.signInWithPassword({email, password})
-    if(error) alert("Fail: "+error.message)
+    if(error) alert(error.message)
     else { setUser(data.user); fetchVideos() }
   }
 
@@ -43,34 +43,38 @@ function App() {
     setMsg("Upload हो रहा है...")
     const fileName = Date.now()+"-"+file.name
     const {error: upError} = await supabase.storage.from('videos').upload(fileName, file)
-    if(upError){ setMsg(""); return alert(upError.message) }
+    if(upError){ setMsg(""); return alert("Storage Error: "+upError.message) }
     const {data} = supabase.storage.from('videos').getPublicUrl(fileName)
-    const {error: dbError} = await supabase.from('videos').insert({title, video_url: data.publicUrl, user_email: user.email})
-    if(dbError){ setMsg(""); return alert(dbError.message) }
+
+    // सिर्फ title और video_url - user_email हटा दिया!
+    const {error: dbError} = await supabase.from('videos').insert({ title: title, video_url: data.publicUrl })
+    if(dbError){ setMsg(""); return alert("DB Error: "+dbError.message) }
+
     setMsg("Upload Done!"); setTitle(""); setFile(null); fetchVideos()
+    setTimeout(()=>setMsg(""), 2000)
   }
 
   return (
     <div style={{background:"black", color:"white", minHeight:"100vh", padding:"20px"}}>
-      <h2 style={{color:"red"}}>ClipTube - ईमेल लॉगिन 🔒</h2>
+      <h2 style={{color:"red"}}>ClipTube 🔒</h2>
       {!user? (
         <div>
           <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={{padding:"10px", width:"90%", margin:"5px"}}/><br/>
           <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} style={{padding:"10px", width:"90%", margin:"5px"}}/><br/>
-          <button onClick={handleLogin} style={{padding:"10px", background:"red", color:"white", margin:"5px"}}>लॉग इन करें</button>
-          <button onClick={handleSignup} style={{padding:"10px", background:"white", color:"black", margin:"5px"}}>नया Account बनायें</button>
+          <button onClick={handleLogin} style={{padding:"10px", background:"red", color:"white", margin:"5px"}}>लॉग इन</button>
+          <button onClick={handleSignup} style={{padding:"10px", background:"white", color:"black", margin:"5px"}}>नया Account</button>
         </div>
       ) : (
         <div>
           <p>✅ {user.email} <button onClick={async()=>{await supabase.auth.signOut(); setUser(null)}}>लॉग आउट</button></p>
-          <input placeholder="शीर्षक" value={title} onChange={e=>setTitle(e.target.value)} style={{padding:"10px", width:"90%", margin:"5px"}}/><br/>
+          <input placeholder="शीर्षक" value={title} onChange={e=>setTitle(e.target.value)} style={{padding:"10px", width:"90%", margin:"5px", color:"black"}}/><br/>
           <input type="file" accept="video/*" onChange={e=>setFile(e.target.files[0])} style={{margin:"10px"}}/><br/>
           <button onClick={handleUpload} style={{padding:"10px 20px", background:"red", color:"white", borderRadius:"20px"}}>अपलोड करें</button>
           <p>{msg}</p>
-          <h3>सभी वीडियो ({videos.length})</h3>
+          <h3>वीडियो ({videos.length})</h3>
           {videos.map(v=>(
             <div key={v.id} style={{border:"1px solid #333", margin:"10px 0", padding:"10px"}}>
-              <p><b>{v.title}</b></p>
+              <p>{v.title}</p>
               <video src={v.video_url} controls style={{width:"100%"}}></video>
             </div>
           ))}
