@@ -7,7 +7,6 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [videoFile, setVideoFile] = useState(null);
 
-  // ऐप शुरू होते ही डेटाबेस से सारे वीडियो लोड करने के लिए
   useEffect(() => {
     fetchVideos();
   }, []);
@@ -26,7 +25,6 @@ export default function App() {
     }
   };
 
-  // वीडियो अपलोड करने का फंक्शन
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!videoFile) {
@@ -38,31 +36,31 @@ export default function App() {
       setUploading(true);
       const fileName = `${Date.now()}_${videoFile.name}`;
 
-      // 1. Supabase Storage में वीडियो अपलोड करें (बकेट का नाम 'videos' होना चाहिए)
+      // 1. Supabase Storage में वीडियो अपलोड करें
       const { data: storageData, error: storageError } = await supabase.storage
         .from('videos')
         .upload(fileName, videoFile);
 
       if (storageError) throw storageError;
 
-      // 2. अपलोड किए गए वीडियो का पब्लिक URL निकालें
+      // 2. पब्लिक URL प्राप्त करें
       const { data: publicURLData } = supabase.storage
         .from('videos')
         .getPublicUrl(fileName);
 
       const videoUrl = publicURLData.publicUrl;
 
-      // 3. डेटाबेस टेबल ('videos') में वीडियो का लिंक और नाम सेव करें
+      // 3. डेटाबेस टेबल ('videos') में सही कॉलम नाम ('video_url') के साथ डेटा सेव करें
       const { error: dbError } = await supabase
         .from('videos')
-        .insert([{ title: title || 'बिना नाम का वीडियो', url: videoUrl }]);
+        .insert([{ title: title || 'बिना नाम का वीडियो', video_url: videoUrl }]);
 
       if (dbError) throw dbError;
 
       alert('वीडियो सफलतापूर्वक अपलोड हो गया!');
       setTitle('');
       setVideoFile(null);
-      fetchVideos(); // लिस्ट को रिफ्रेश करें
+      fetchVideos();
     } catch (error) {
       console.error('अपलोड करने में समस्या:', error.message);
       alert('अपलोड फेल हो गया: ' + error.message);
@@ -75,7 +73,6 @@ export default function App() {
     <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       <h2>मेरा वीडियो ऐप (Video App)</h2>
 
-      {/* वीडियो अपलोड फॉर्म */}
       <form onSubmit={handleUpload} style={{ background: '#f4f4f4', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
         <h3>नया वीडियो अपलोड करें</h3>
         <div style={{ marginBottom: '10px' }}>
@@ -99,7 +96,6 @@ export default function App() {
         </button>
       </form>
 
-      {/* वीडियो की लिस्ट */}
       <h3>सभी वीडियो</h3>
       {videoList.length === 0 ? (
         <p>अभी कोई वीडियो अपलोड नहीं किया गया है।</p>
@@ -108,7 +104,7 @@ export default function App() {
           <div key={vid.id} style={{ marginBottom: '20px', border: '1px solid #ddd', padding: '10px', borderRadius: '8px' }}>
             <h4>{vid.title}</h4>
             <video width="100%" controls style={{ borderRadius: '4px' }}>
-              <source src={vid.url} type="video/mp4" />
+              <source src={vid.video_url} type="video/mp4" />
               आपका ब्राउज़र वीडियो टैग को सपोर्ट नहीं करता।
             </video>
           </div>
