@@ -50,7 +50,7 @@ export default function App() {
 
       const videoUrl = publicURLData.publicUrl;
 
-      // 3. डेटाबेस टेबल ('videos') में सही कॉलम नाम ('video_url') के साथ डेटा सेव करें
+      // 3. डेटाबेस टेबल ('videos') में डेटा सेव करें
       const { error: dbError } = await supabase
         .from('videos')
         .insert([{ title: title || 'बिना नाम का वीडियो', video_url: videoUrl }]);
@@ -62,8 +62,8 @@ export default function App() {
       setVideoFile(null);
       fetchVideos();
     } catch (error) {
-      console.error('अपलोड करने में समस्या:', error.message);
-      alert('अपलोड फेल हो गया: ' + error.message);
+      console.error('विस्तृत एरर:', error);
+      alert('अपलोड फेल हो गया: ' + (error.message || JSON.stringify(error)));
     } finally {
       setUploading(false);
     }
